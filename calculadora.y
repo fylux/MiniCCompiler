@@ -1,12 +1,24 @@
 %{
 #include <stdio.h>
-//#include <ctype.h>
+#include <string.h>
+
 extern int yylex();
 void yyerror(char *msg);
+
 %}
 
-%token FUNC VAR LET IF ELSE WHILE PRINT READ ID INTEGER STRING SEMICOLON COMMA PLUS MINUS ASTERISK SLASH EQUAL PARENTHI PARENTHD BRACKETI BRACKETD
+%union {
+	int i;
+	char c[17];
+}
 
+%token FUNC VAR LET IF ELSE WHILE PRINT READ STRING SEMICOLON COMMA PLUS MINUS ASTERISK SLASH EQUAL PARENTHI PARENTHD BRACKETI BRACKETD
+
+%token<i> INTEGER
+
+%token<c> ID
+
+%type<i> expr expr2 fact;
 
 %%
 entrada : /*vacio*/ { printf("Aplica entrada -> lambda \n"); }
@@ -14,21 +26,26 @@ entrada : /*vacio*/ { printf("Aplica entrada -> lambda \n"); }
 ;
 
 linea : expr SEMICOLON { printf("Aplica linea -> expr = %d \n", $1); }
+| assign SEMICOLON { printf("Aplica linea -> assign\n"); }
 ;
 
-expr : expr PLUS term { printf("Aplica expr -> expr + term \n"); $$=$1+$3;}
-| expr MINUS term { printf("Aplica expr -> expr - term \n"); $$=$1-$3;}
-| term { printf("Aplica expr->term\n");}
+assign : ID EQUAL expr { printf("Aplica assign -> %s = %d\n",$1,$3);}
 ;
 
-term : term ASTERISK fact { printf("Aplica term -> term * fact \n"); $$=$1*$3;}
-| term SLASH fact { printf("Aplica expr -> expr / term \n"); $$=$1/$3;}
-| fact { printf("Aplica term -> fact \n");}
+expr : expr PLUS expr2 { printf("Aplica expr -> expr + expr2 \n"); $$=$1+$3;}
+| expr MINUS expr2 { printf("Aplica expr -> expr - expr2 \n"); $$=$1-$3;}
+| expr2 { printf("Aplica expr -> expr2\n");}
+;
+
+expr2 : expr2 ASTERISK fact { printf("Aplica expr2 -> expr2 * fact \n"); $$=$1*$3;}
+| expr2 SLASH fact { printf("Aplica expr2 -> expr2 / term \n"); $$=$1/$3;}
+| fact { printf("Aplica expr2 -> fact \n");}
 ;
 
 fact : PARENTHI expr PARENTHD { printf("Aplica fact -> (expr) \n"); $$=$2;}
 | MINUS fact {printf("Aplica fact -> - fact \n"); $$ = -$2;} 
-|INTEGER { printf("Aplica fact -> DIGITO \n");}
+| INTEGER { printf("Aplica fact -> DIGITO \n"); $$=$1;}
+| ID { printf("Aplica fact -> ID \n"); $$=0; /*TODO*/ }
 ;
 %%
 
