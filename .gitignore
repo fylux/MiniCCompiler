@@ -1,3 +1,3 @@
-calculadora.tab.[hc]
+syntax.tab.[hc]
 *.txt
-lexico.c
+lexical.c
