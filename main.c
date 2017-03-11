@@ -1,6 +1,6 @@
 //Programa principal
 
-#include "calculadora.tab.h"
+#include "syntax.tab.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -10,7 +10,6 @@ extern FILE *yyin;
 extern char *yytext;
 
 int main(int argc, char **argv) {
-	//return yyparse();
 	if (argc !=2) {
 		printf("Uso: %s fichero.stl\n", argv[0]);
 		exit(1);	
@@ -24,13 +23,8 @@ int main(int argc, char **argv) {
 
 	yyin = fichero;
 	int token;
-	
-	yyparse();
 
-	/*while ( (token= yylex())!=0){
-	if (token == ID)
-		printf("ID visto en main: %s\n",yytext);					
-	}*/
+	yyparse();
 
 	fclose(fichero);
 	return 0;

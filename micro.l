@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
-#include "calculadora.tab.h"
+#include "syntax.tab.h"
 int comienzo;
 
 %}
@@ -85,7 +85,6 @@ read {
 	}
 	else {
 		printf("ID: %s\n",yytext);
-		//yylval.c = malloc(strlen(yytext)+1);	
 		strcpy(yylval.c,yytext);	
 		return ID;
 	}
