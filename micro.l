@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
+#include "linkedList.h"
 #include "syntax.tab.h"
 int comienzo;
 
@@ -96,7 +97,7 @@ read {
 	}
 	else {
 		printf("INTEGER: %s\n",yytext);
-		yylval.i = atoi(yytext);
+		yylval.i = atoi(yytext);	
 		return INTEGER;
 	}
 }

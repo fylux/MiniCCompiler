@@ -1,26 +1,55 @@
+#ifndef INFO_H_HEADER_
+#define INFO_H_HEADER_
 #include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
-typedef int Element;
+typedef char * Element;
 
-typedef struct List List;
-typedef struct Node * Node;
+typedef struct List_var List_var;
+typedef struct Var * Var;
+typedef struct List_op List_op;
+typedef struct Op Op;
 
-struct Node
-{
-	Element elem;
-	Node sig;
+
+struct Op {
+	char cod[5];
+	char dst[4];
+	char arg1[10];
+	char arg2[10];
+	Op * sig;
 };
 
-struct List
+struct Var
 {
-	Node head;
-	Node tail;
+	char elem[17];
+	Var sig;
 };
 
-void free_list(List * l);
+struct List_var
+{
+	Var head;
+	Var tail;
+};
 
-int find_list(List * l, Element e);
+struct List_op
+{
+	Op * head;
+	Op * tail;
+};
 
-void push_list(List * l, Element e);
+void free_list_var(List_var * l);
+void free_list_op(List_op * l);
 
+int find_list_var(List_var * l, Element e);
 
+void push_list_var(List_var * l, Element e);
+void push_list_op(List_op * l, Op * p);
+
+void join_list_op(List_op * l, List_op * p);
+
+void print_list_op(List_op * l);
+
+Op * create_op(char * cod, char * dst, char * arg1, char * arg2);
+
+#endif

@@ -1,8 +1,13 @@
 //Programa principal
 
-#include "syntax.tab.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "linkedList.h"
+#include "syntax.tab.h"
+
+
+extern List_var l;
+extern List_op lo;
 
 extern int yylex();
 extern int yyparse();
@@ -26,6 +31,7 @@ int main(int argc, char **argv) {
 
 	yyparse();
 
+	free_list_var(&l);
 	fclose(fichero);
 	return 0;
 

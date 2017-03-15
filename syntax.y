@@ -3,17 +3,18 @@
 #include <string.h>
 #include "linkedList.h"
 
-List l={NULL,NULL};
-
+List_var l = {NULL,NULL};
+List_op lo = {NULL,NULL};
 
 extern int yylex();
 void yyerror(char *msg);
-
+char * get_reg();
 %}
 
 %union {
 	int i;
 	char c[17];
+	List_op p;
 }
 
 %token FUNC VAR LET IF ELSE WHILE PRINT READ STRING SEMICOLON COMMA PLUS MINUS ASTERISK SLASH EQUAL PARENTHI PARENTHD BRACKETI BRACKETD
@@ -22,44 +23,79 @@ void yyerror(char *msg);
 
 %token<c> ID
 
-%type<i> expr expr2 fact;
+%type<p> expr expr2 fact assign;
 
 %%
-entrada : /*vacio*/ { printf("Aplica entrada -> lambda \n"); }
-| entrada linea { printf("Aplica entrada -> entrada linea \n"); }
+entrada : /*vacio*/ { printf("entrada -> lambda \n"); }
+| entrada linea { printf("entrada -> entrada linea \n"); }
 ;
 
-linea : expr SEMICOLON { printf("Aplica linea -> expr = %d \n", $1); }
-| assign SEMICOLON { printf("Aplica linea -> assign\n"); }
+linea : expr SEMICOLON { printf("linea -> expr \n"); }
+| assign SEMICOLON { printf("linea -> assign\n"); }
 ;
 
-assign : ID EQUAL expr { printf("Aplica assign -> %s = %d\n",$1,$3);}
+assign : ID EQUAL expr {
+	printf("assign -> ");
+	push_list_var(&l,$1);
+}
 ;
 
-expr : expr PLUS expr2 { printf("Aplica expr -> expr + expr2 \n"); $$=$1+$3;}
-| expr MINUS expr2 { printf("Aplica expr -> expr - expr2 \n"); $$=$1-$3;}
-| expr2 { printf("Aplica expr -> expr2\n");}
+expr : expr PLUS expr2 {
+	printf("expr -> expr + expr2 \n");
+	join_list_op(&$$,&$3);
+	
+	Op * p = create_op("add",get_reg(),"r1","r2");
+	
+	push_list_op(&$$,p);
+	print_list_op(&$$);
+}
+| expr MINUS expr2 {
+	printf("expr -> expr - expr2 \n");
+}
+| expr2 {
+	printf("expr -> expr2\n");
+}
 ;
 
-expr2 : expr2 ASTERISK fact { printf("Aplica expr2 -> expr2 * fact \n"); $$=$1*$3;}
-| expr2 SLASH fact { printf("Aplica expr2 -> expr2 / term \n"); $$=$1/$3;}
-| fact { printf("Aplica expr2 -> fact \n");}
+expr2 : expr2 ASTERISK fact {
+	printf("expr2 -> expr2 * fact \n");
+}
+| expr2 SLASH fact {
+	printf("expr2 -> expr2 / term \n");
+}
+| fact {
+	printf("expr2 -> fact \n");
+}
 ;
 
-fact : PARENTHI expr PARENTHD { printf("Aplica fact -> (expr) \n"); $$=$2;}
-| MINUS fact {printf("Aplica fact -> - fact \n"); $$ = -$2;} 
-| INTEGER { printf("Aplica fact -> DIGITO \n"); $$=$1;}
-| ID { printf("Aplica fact -> ID \n"); $$=0; /*TODO*/ }
+fact : PARENTHI expr PARENTHD {
+	printf("fact -> (expr) \n");
+}
+| MINUS fact {
+	printf("fact -> - fact \n");
+} 
+| INTEGER {
+	printf("fact -> DIGITO %d\n",$1);
+	char r1[10];
+	sprintf(r1, "%d", $1);
+	Op * p = create_op("l1",get_reg(),r1,"-");	
+	$$ = (List_op){NULL,NULL};
+	push_list_op(&$$,p);
+}
+| ID {
+	printf("fact -> ID \n");
+	if (!find_list_var(&l,$1))
+		printf("La variable %s no ha sido declarada\n",$1);
+}
 ;
 %%
 
 void yyerror(char *msg) {
 	printf("Error sintáctico: %s\n",msg);
-	push_list(&l,5);
-	push_list(&l,3);
-	push_list(&l,2);
-	printf("%d\n",find_list(&l,2));
-	free_list(&l);
-	printf("%d\n",find_list(&l,2));
 }
+
+char * get_reg(){
+	return "$1";
+}
+
 
