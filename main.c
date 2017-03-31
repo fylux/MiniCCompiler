@@ -1,20 +1,17 @@
 //Programa principal
 
+#include "minic.tab.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include "linkedList.h"
-#include "syntax.tab.h"
-
-
-extern List_var l;
-extern List_op lo;
-
 extern int yylex();
 extern int yyparse();
 extern FILE *yyin;
 extern char *yytext;
-
+extern List_var list;
+//extern int yydebug;
 int main(int argc, char **argv) {
+	//return yyparse();
 	if (argc !=2) {
 		printf("Uso: %s fichero.stl\n", argv[0]);
 		exit(1);	
@@ -28,10 +25,15 @@ int main(int argc, char **argv) {
 
 	yyin = fichero;
 	int token;
-
+	ini_list_var(&list);
+//	yydebug = 0;
 	yyparse();
 
-	free_list_var(&l);
+	/*while ( (token= yylex())!=0){
+	if (token == ID)
+		printf("ID visto en main: %s\n",yytext);					
+	}*/
+
 	fclose(fichero);
 	return 0;
 

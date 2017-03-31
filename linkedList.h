@@ -23,6 +23,7 @@ struct Op {
 struct Var
 {
 	char elem[17];
+	int valor;
 	Var sig;
 };
 
@@ -38,12 +39,15 @@ struct List_op
 	Op * tail;
 };
 
+
+void ini_list_var(List_var * l);
+
 void free_list_var(List_var * l);
 void free_list_op(List_op * l);
 
 int find_list_var(List_var * l, Element e);
 
-void push_list_var(List_var * l, Element e);
+void push_list_var(List_var * l, Element e,int valor);
 void push_list_op(List_op * l, Op * p);
 
 void join_list_op(List_op * l, List_op * p);
@@ -63,5 +67,7 @@ void free_reg(int i);
 char * get_dst(List_op * l);
 
 int get_n_reg(char * t);
+
+
 
 #endif

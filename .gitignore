@@ -1,3 +1,4 @@
 syntax.tab.[hc]
 *.txt
 lexical.c
+*.output

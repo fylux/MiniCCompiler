@@ -2,6 +2,13 @@
 
 int regs[10] = {0};
 
+
+void ini_list_var(List_var * l){
+	
+		l->head=NULL;
+		l->tail=NULL;	
+}
+
 void free_list_var(List_var * l) {
 	while(l->head!=NULL) {			
 		Var aux = l->head;
@@ -25,14 +32,15 @@ int find_list_var(List_var * l, Element e) {
 		i++;
 	} 
 	if (n!=NULL)
-		return i;
+		return n->valor;
 	else
 		return -1;
 }
 
-void push_list_var(List_var * l, Element e) {
+void push_list_var(List_var * l, Element e,int valor) {
 	Var aux = malloc(sizeof(struct Var));
 	strcpy(aux->elem,e);
+	aux->valor=valor;
 	aux->sig = NULL;
 	if (l->head == NULL) {
 		l->head = aux;
