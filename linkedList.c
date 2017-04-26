@@ -3,19 +3,34 @@
 int regs[10] = {0};
 
 
-void ini_list_var(List_var * l){
-	
-		l->head=NULL;
-		l->tail=NULL;	
+List_var * init_list_var(){
+	List_var * l = malloc(sizeof(struct List_var));
+	l->head=NULL;
+	l->tail=NULL;
 }
+
+List_op * init_list_op(){
+	List_op * l = malloc(sizeof(struct List_op));
+	l->head=NULL;
+	l->tail=NULL;
+}
+
+List_str * init_list_str(){
+	List_str * l = malloc(sizeof(struct List_str));
+	l->head=NULL;
+	l->tail=NULL;
+}
+
+
 
 void free_list_var(List_var * l) {
 	while(l->head!=NULL) {			
-		Var aux = l->head;
+		Var * aux = l->head;
 		l->head = l->head->sig;
 		free(aux);
 	}
 }
+
 void free_list_op(List_op * l) {
 	while(l->head!=NULL) {			
 		Op * aux = l->head;
@@ -24,30 +39,39 @@ void free_list_op(List_op * l) {
 	}
 }
 
-int find_list_var(List_var * l, Element e) {
-	Var n = l->head;
+void free_list_str(List_str * l) {
+	while(l->head!=NULL) {			
+		Str * aux = l->head;
+		l->head = l->head->sig;
+		free(aux->str);
+		free(aux);
+	}
+}
+
+
+Var * find_list_var(List_var * l, Element e) {
+	Var * n = l->head;
 	int i = 0;
 	while(n!=NULL && strcmp(n->elem,e) != 0) {
 		n = n->sig;
 		i++;
 	} 
-	if (n!=NULL)
-		return n->valor;
-	else
-		return -1;
+	
+	return n;
 }
 
-void push_list_var(List_var * l, Element e,int valor) {
-	Var aux = malloc(sizeof(struct Var));
+void push_list_var(List_var * l, Element e, char type) {
+	Var * aux = malloc(sizeof(struct Var));
 	strcpy(aux->elem,e);
-	aux->valor=valor;
+	aux->type = type;
 	aux->sig = NULL;
+
 	if (l->head == NULL) {
 		l->head = aux;
 		l->tail = aux;
 	}	
 	else {
-		Var aux2 = l->tail;
+		Var * aux2 = l->tail;
 		aux2->sig = aux;
 		l->tail = aux;
 	}	
@@ -65,39 +89,64 @@ void push_list_op(List_op * l, Op * p) {
 		aux2->sig = p;
 		l->tail = p;
 	}	
+}
 
+void push_list_str(List_str * l, char * string) {
+	Str * aux = malloc(sizeof(struct Str));
+	aux->str = strdup(string);
+	aux->sig = NULL;
+
+	if (l->head == NULL) {
+		l->head = aux;
+		l->tail = aux;
+	}	
+	else {
+		Str * aux2 = l->tail;
+		aux2->sig = aux;
+		l->tail = aux;
+	}
 }
 
 //L1 and L2 not null
 void join_list_op(List_op * l1, List_op * l2) {
-	l1->tail->sig = l2->head;
-	l1->tail = l2->tail;	
+	if (l1->head == NULL)
+		l1->head = l2->head;
+	else
+		l1->tail->sig = l2->head;
+
+	l1->tail = l2->tail;
+	
+	free(l2);
 }
 
 void print_list_op(List_op * l) {
 	Op * p = l->head;
 	while(p != NULL) {
-		printf("%s %s %s %s\n",p->cod,p->dst,p->arg1,p->arg2);
+		printf("%s %s, %s",p->cod,p->dst,p->arg1);
+		
+		if (p->arg2[0] != '\0')
+			printf(", %s",p->arg2);
+		
+		printf("\n");
 		p = p->sig;
+
 	}
 }
 
 void print_list_var(List_var * l) {
-	Var p = l->head;
+	Var * p = l->head;
 	while(p != NULL) {
-		printf("%s ",p->elem);
+		printf("_%s: .word 4\n",p->elem);
 		p = p->sig;
 	}
-	printf("\n");
 }
 
-void print_list_str(List_var * l) {
-	Var p = l->head;
-	while(p != NULL) {
-		printf("%s ",p->elem);
+void print_list_str(List_str * l) {
+	Str * p = l->head;
+	for(int i = 0; p != NULL; i++) {
+		printf("_str_%d\t.asciiz %s\n",i,p->str);
 		p = p->sig;
 	}
-	printf("\n");
 }
 
 Op * create_op(char * cod, char * dst, char * arg1, char * arg2) {

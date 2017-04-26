@@ -1,9 +1,10 @@
 %{
 #include <stdio.h>
-#include "minic.tab.h"
 #include <math.h>
 #include <string.h>
 #include "linkedList.h"
+#include "minic.tab.h"
+
 int comienzo;
 
 %}
@@ -21,62 +22,81 @@ D	[0-9]
 %%
 
 func { 
-	printf("FUNC\n"); return FUNC;
+	//printf("FUNC\n");
+	return FUNC;
 }
 var { 
-	printf("VAR\n"); return VAR;
+	//printf("VAR\n");
+	return VAR;
 }
 let { 
-	printf("LET\n"); return LET;
+	//printf("LET\n");
+	return LET;
 }
 if { 
-	printf("IF\n"); return IF;
+	//printf("IF\n"); 
+	return IF;
 }
 else { 
-	printf("ELSE\n"); return ELSE;
+	//printf("ELSE\n"); 
+	return ELSE;
 }
 while { 
-	printf("WHILE\n"); return WHILE;
+	//printf("WHILE\n"); 
+	return WHILE;
 }
 print { 
-	printf("PRINT\n"); return PRINT;
+	//printf("PRINT\n"); 
+	return PRINT;
 }
 read { 
-	printf("READ\n"); return READ;
+	//printf("READ\n"); 
+	return READ;
 }
 [;] { 
-	printf("SEMICOLON\n"); return SEMICOLON;
+	//printf("SEMICOLON\n"); 
+	return SEMICOLON;
 }
 [,] { 
-	printf("COMMA \n"); return COMMA ;
+	//printf("COMMA \n"); 
+	return COMMA ;
 }
 [+]  { 
-	printf("PLUS\n"); return PLUS;
+	//printf("PLUS\n"); 
+	return PLUS;
 }
 [-]  { 
-	printf("MINUS\n"); return MINUS;
+	//printf("MINUS\n"); 
+	return MINUS;
 }
 [*]  { 
-	printf("ASTERISK\n"); return ASTERISK;
+	//printf("ASTERISK\n"); 
+	return ASTERISK;
 }
 
 [/]  { 
-	printf("SLASH\n"); return SLASH;
+	//printf("SLASH\n"); 
+	return SLASH;
 }
 [=]  { 
-	printf("EQUAL\n"); return EQUAL;
+	//printf("EQUAL\n"); 
+	return EQUAL;
 }
 [(]  { 
-	printf("PARENTHI\n"); return PARENTHI;
+	//printf("PARENTHI\n"); 
+	return PARENTHI;
 }
 [)]  { 
-	printf("PARENTHD\n"); return PARENTHD;
+	//printf("PARENTHD\n");
+	return PARENTHD;
 }
 [{]  { 
-	printf("BRACKETI\n"); return BRACKETI;
+	//printf("BRACKETI\n"); 
+	return BRACKETI;
 }
 [}]  { 
-	printf("BRACKETD\n"); return BRACKETD;
+	//printf("BRACKETD\n"); 
+	return BRACKETD;
 }
 
 [ \n\r\t]+ { /**/ }
@@ -87,7 +107,7 @@ read {
 	}
 	else {
 		yylval.str=strdup(yytext);
-		printf("ID: %s\n",yytext);
+		//printf("ID: %s\n",yytext);
 //		strcpy(yylval.str,yytext);
 
 		return ID;
@@ -99,14 +119,14 @@ read {
 		printf("ERROR [%i]: |%s| greater than 2^31\n",yylineno,yytext);	
 	}
 	else {
-		printf("INTEGER: %s\n",yytext);
+		//printf("INTEGER: %s\n",yytext);
 		yylval.num = atoi(yytext);
 		return INTEGER;
 	}
 }
 
 \"[^\n"]*\" {
-	printf("STRING: %s\n",yytext);
+	//printf("STRING: %s\n",yytext);
 	yylval.str=strdup(yytext);
 	return STRING;
 		

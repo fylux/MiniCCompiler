@@ -1,14 +1,17 @@
-//Programa principal
-
-#include "minic.tab.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include "linkedList.h"
+//#include "minic.tab.h"
+
 extern int yylex();
 extern int yyparse();
 extern FILE *yyin;
 extern char *yytext;
-extern List_var list;
+
+extern List_var * list_var;
+extern List_str * list_str;
+extern List_op * list_op;
+
 //extern int yydebug;
 int main(int argc, char **argv) {
 	//return yyparse();
@@ -25,7 +28,10 @@ int main(int argc, char **argv) {
 
 	yyin = fichero;
 	int token;
-	ini_list_var(&list);
+	list_var = init_list_var();
+	list_str = init_list_str();
+	list_op = init_list_op();
+
 //	yydebug = 0;
 	yyparse();
 
@@ -35,6 +41,17 @@ int main(int argc, char **argv) {
 	}*/
 
 	fclose(fichero);
+	printf(".data\n");
+	print_list_var(list_var);
+	print_list_str(list_str);
+
+	printf("\n.text\n");
+	print_list_op(list_op);
+
+	free_list_var(list_var);
+	free_list_op(list_op);
+	free_list_str(list_str);
+	//free_list_op(&list_op);
 	return 0;
 
 }
