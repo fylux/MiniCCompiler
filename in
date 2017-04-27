@@ -1,4 +1,6 @@
 func jamon(){
-	var a = 2,b, c=2;
-	a = 3255+14*3-2;
+	let a=2;
+	var b=3;
+
+	print "Hola :", a;
 }

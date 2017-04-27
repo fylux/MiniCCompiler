@@ -42,11 +42,14 @@ int main(int argc, char **argv) {
 
 	fclose(fichero);
 	printf(".data\n");
-	print_list_var(list_var);
 	print_list_str(list_str);
+	printf("\n");
+	print_list_var(list_var);
 
-	printf("\n.text\n");
+	printf("\n.text\n.global main\n\nmain:\n");
 	print_list_op(list_op);
+	
+	printf("\n\tli $v0, 10\n\tsyscall\n");
 
 	free_list_var(list_var);
 	free_list_op(list_op);
