@@ -12,16 +12,18 @@ void declare_var(char * name);
 List_op * load_var(char * name);
 void assign_var(char * name, List_op * l1, List_op * l2);
 void arithmetic_op(char * type, List_op * join, List_op * l1, List_op * l2);
-char * concatenate(char * a, char * b);
+char * concat(char * a, char * b);
+int is_mutable(Var * var);
 char * int_to_string(int n);
 
 List_var * list_var;
 List_op * list_op;
 List_str * list_str;
 
-int senten = 0;
 int nStr = -1;
-//var = -1, let = 1
+int nJump = 0;
+
+//var = 1, let = -1
 int varType = 0;
 
 char int_type = 1;
@@ -39,8 +41,8 @@ char float_type = 2;
 %token<num> INTEGER 
 %token<str> STRING ID
 %type<num>  asig 
-%type<l_op> expr statement print_list print_item 
-%type<str>  read_list
+%type<l_op> expr statement statement_list print_list print_item read_list read_item
+
 
 /* Precedencia y asociatividad de operadores */
 //va de menos precedencia a más
@@ -58,14 +60,15 @@ char float_type = 2;
 program :
 ////////////
 /*vacio*/ { printf("Aplica entrada -> lambda \n");}
-| FUNC ID PARENTHI PARENTHD BRACKETI declarations { senten = 1; } statement_list BRACKETD {
+| FUNC ID PARENTHI PARENTHD BRACKETI declarations statement_list BRACKETD {
+	join_list_op(list_op,$7);
 }
 ;
 
 declarations:
 /*lambda*/
-| declarations VAR /*{varType = -1;}*/ identifier_list SEMICOLON {}
-| declarations LET /*{varType = 1;}*/ identifier_list SEMICOLON {}
+| declarations VAR {varType = 1;} identifier_list SEMICOLON {}
+| declarations LET {varType = -1;} identifier_list SEMICOLON {}
 ;
 
 identifier_list: 
@@ -84,31 +87,82 @@ ID {
 ;
 
 statement_list:
-/*lambda*/
+/*lambda*/ {
+	$$ = init_list_op();
+}
 | statement_list statement {
-	join_list_op(list_op,$2);
+	join_list_op($$,$2);
 }
 ;
 
 statement :
 ID EQUAL expr SEMICOLON {
 	$$ = init_list_op();
-	assign_var($1,$$,$3);
+	Var * var = find_list_var(list_var,$1);
+	if (var == NULL)
+		printf("Error: undeclared var %s\n",$1);
+	else if (!is_mutable(var))
+		printf("Error: var %s is immutable\n",$1);
+	else 
+		assign_var($1,$$,$3);
 }
 | BRACKETI statement_list BRACKETD {
+		$$ = $2;
 	}
 | IF PARENTHI expr PARENTHD statement ELSE statement {
-	}
+	$$ = $3;
+
+	char * dst = get_dst($3);
+	Op * beqz = create_op("beqz",dst,concat("j_",int_to_string(++nJump)),"");
+	Op * b = create_op("b",concat("j_",int_to_string(nJump+1)),"","");
+	Op * jump1 = create_op(concat(concat("j_",int_to_string(nJump)),":"),"","","");
+	Op * jump2 = create_op(concat(concat("j_",int_to_string(++nJump)),":"),"","","");
+	
+	push_list_op($$,beqz);
+	join_list_op($$,$5);
+	push_list_op($$,b);
+	push_list_op($$,jump1);
+	join_list_op($$,$7);
+	push_list_op($$,jump2);
+
+	free_reg(get_n_reg(dst));
+}
 | IF PARENTHI expr PARENTHD statement %prec NOELSE {
-	}
+	$$ = $3;
+
+	char * dst = get_dst($3);
+	Op * beqz = create_op("beqz",dst,concat("j_",int_to_string(++nJump)),"");
+	Op * jump = create_op(concat(concat("j_",int_to_string(nJump)),":"),"","","");
+
+	push_list_op($$,beqz);
+	join_list_op($$,$5);
+	push_list_op($$,jump);
+
+	free_reg(get_n_reg(dst));
+}
 | WHILE  PARENTHI expr PARENTHD statement  {
-	printf("aplica stament -> WHILE (expr) st \n");
-	}
+	$$ = init_list_op();
+
+	char * dst = get_dst($3);
+	Op * jump1 = create_op(concat(concat("j_",int_to_string(++nJump)),":"),"","","");
+	Op * beqz = create_op("beqz",dst,concat("j_",int_to_string(nJump+1)),"");
+	Op * jump2 = create_op(concat(concat("j_",int_to_string(++nJump)),":"),"","","");
+	Op * loop = create_op("b",concat("j_",int_to_string(nJump-1)),"","");
+
+	push_list_op($$,jump1);
+	join_list_op($$,$3);
+	push_list_op($$,beqz);
+	join_list_op($$,$5);
+	push_list_op($$,loop);
+	push_list_op($$,jump2);
+	
+	free_reg(get_n_reg(dst));
+}
 | PRINT print_list SEMICOLON {
 	$$ = $2;
 	}
 | READ read_list SEMICOLON {
-	printf("aplica stament -> READ read_list \n");
+	$$ = $2;
 }
 ;
 
@@ -129,7 +183,7 @@ STRING {
 	$$ = init_list_op();
 
 	char * dst = get_reg();
-	Op * la = create_op("la",dst,concatenate("$",concatenate("str_",int_to_string(nStr))),"");
+	Op * la = create_op("la",dst,concat("$",concat("str_",int_to_string(nStr))),"");
 	Op * op = create_op("move","$a0",dst,"");
 	Op * li = create_op("li","$v0","4","");
 	Op * syscall = create_op("syscall","","","");
@@ -160,14 +214,34 @@ STRING {
 }
 ;
 
-read_list : read_list COMMA ID {
-	printf("aplica read_list -> read_list , id \n");
-	load_var($3);
+read_list : read_list COMMA read_item {
+	$$ = init_list_op();
+	join_list_op($$,$1);
+	join_list_op($$,$3);
 }
-| ID {
-	
+| read_item {
+	$$ = $1;
 }
 ;
+
+read_item : ID {
+	$$ = init_list_op();
+	Var * var = find_list_var(list_var,$1);
+	if (var == NULL)
+		printf("Error: undeclared var %s\n",$1);
+	else if (!is_mutable(var))
+		printf("Error: var %s is immutable\n",$1);
+	else {
+		Op * li = create_op("li","$v0","5","");
+		Op * syscall = create_op("syscall","","","");
+		Op * sw = create_op("sw","$v0",concat("_",$1),"");
+
+		push_list_op($$,li);
+		push_list_op($$,syscall);
+		push_list_op($$,sw);
+	}
+}
+
 
 expr :
 expr PLUS expr {
@@ -237,16 +311,14 @@ expr PLUS expr {
 ////////////////////////////////////////////////////////////
 
 void yyerror(char *msg) {
-	printf("Syntax Error	: %s\n",msg);
+	printf("Syntax Error : %s\n",msg);
 }
 
 void declare_var(char * name) {
-	//TODO Differente between let and var
-
 	if (find_list_var(list_var,name) != NULL)
 			printf("Error: redeclared variable %s\n", name);
-	else
-		push_list_var(list_var,name,int_type);
+	else 
+		push_list_var(list_var,name,int_type*varType);
 }
 
 
@@ -258,9 +330,8 @@ List_op * load_var(char * name) {
 		List_op * l = init_list_op();
 
 		char * dst = get_reg();
-		Op * op = create_op("lw",dst,name,"");
+		Op * op = create_op("lw",dst,concat("_",name),"");
 		push_list_op(l,op);
-		free_reg(get_n_reg(dst));
 		return l;
 	}
 
@@ -269,7 +340,7 @@ List_op * load_var(char * name) {
 
 void assign_var(char * name, List_op * l1, List_op * l2) {
 	char * dst = get_dst(l2);
-	Op * op = create_op("sw",dst,concatenate("_",name),"");
+	Op * op = create_op("sw",dst,concat("_",name),"");
 	free_reg(get_n_reg(dst));
 
 	push_list_op(l2,op);
@@ -288,7 +359,7 @@ void arithmetic_op(char * type, List_op * join, List_op * l1, List_op * l2) {
 	free_reg(get_n_reg(n2));
 }
 
-char * concatenate(char * a, char * b) {
+char * concat(char * a, char * b) {
 	char * buf = malloc(strlen(a)+strlen(b));
 	snprintf(buf, sizeof buf, "%s%s", a,b);
 	return buf;
@@ -298,4 +369,8 @@ char * int_to_string(int n) {
 	char * str = malloc(sizeof(char)*4);
 	sprintf(str, "%d", n);
 	return str;
+}
+
+int is_mutable(Var * var) {
+	return var->type > 0;
 }

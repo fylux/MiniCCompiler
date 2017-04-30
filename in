@@ -1,6 +1,11 @@
 func jamon(){
-	let a=2;
+	var a;
 	var b=3;
 
-	print "Hola :", a;
+	read a;
+	if (a) {
+		print "a";
+	} else {
+		print "b";
+	}
 }

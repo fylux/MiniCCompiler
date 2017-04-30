@@ -12,7 +12,7 @@ linkedList.o : linkedList.c linkedList.h
 	gcc -c linkedList.c
 
 clean:
-	rm -f scanner lexico.c minic.tab.c minic.tab.h linkedList.o
+	rm -f scanner lexico.c minic.tab.c minic.tab.h linkedList.o main.s
 
 run : scanner in
-	./scanner in
+	./scanner in > main.s; cat main.s

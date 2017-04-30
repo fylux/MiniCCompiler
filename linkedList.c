@@ -122,20 +122,23 @@ void join_list_op(List_op * l1, List_op * l2) {
 void print_list_op(List_op * l) {
 	Op * p = l->head;
 	while(p != NULL) {
-		printf("\t");
-		if (p->dst[0] == '\0') {
+		if (p->cod[0] == 'j') //jump
 			printf("%s",p->cod);
-		}
 		else {
-			printf("%s %s, %s",p->cod,p->dst,p->arg1);
+				printf("\t");
+				printf("%s",p->cod);
+			if (p->dst[0] != '\0')
+				printf(" %s",p->dst);
+			
+			if (p->arg1[0] != '\0')
+				printf(", %s",p->arg1);
+
 			if (p->arg2[0] != '\0')
 				printf(", %s",p->arg2);
 		}
 		
-		
 		printf("\n");
 		p = p->sig;
-
 	}
 }
 
@@ -150,7 +153,7 @@ void print_list_var(List_var * l) {
 void print_list_str(List_str * l) {
 	Str * p = l->head;
 	for(int i = 0; p != NULL; i++) {
-		printf("$str%d\n\t.asciiz %s\n",i,p->str);
+		printf("$str_%d:\n\t.asciiz %s\n",i,p->str);
 		p = p->sig;
 	}
 }
