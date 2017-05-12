@@ -2,18 +2,22 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
+#include <math.h>
 #include "linkedList.h"
 
 
 extern int yylex();
+extern int yylineno;
 
 void yyerror(char *msg);
 void declare_var(char * name);
 List_op * load_var(char * name);
+List_op * load_int(int x);
 void assign_var(char * name, List_op * l1, List_op * l2);
-void arithmetic_op(char * type, List_op * join, List_op * l1, List_op * l2);
+List_op * arithmetic_op(char * type, List_op * l1, List_op * l2);
 char * concat(char * a, char * b);
 int is_mutable(Var * var);
+char check_var(char * name);
 char * int_to_string(int n);
 
 List_var * list_var;
@@ -27,7 +31,9 @@ int nJump = 0;
 int varType = 0;
 
 char int_type = 1;
-char float_type = 2;
+char bool_type = 2;
+
+char error = 0;
 %}
 
 %union {
@@ -36,19 +42,23 @@ char float_type = 2;
 	List_op * l_op;
 }
 
-%token FUNC VAR LET IF ELSE WHILE PRINT READ SEMICOLON COMMA PLUS MINUS ASTERISK SLASH EQUAL PARENTHI PARENTHD BRACKETI BRACKETD 
+%token FUNC VAR LET BOOL INT NEGATION LE GE LT GT EQ NEQ AND OR IF ELSE WHILE TRUE FALSE PRINT READ SEMICOLON COMMA PLUS MINUS ASTERISK SLASH EQUAL PARENTHI PARENTHD BRACKETI BRACKETD 
 
 %token<num> INTEGER 
 %token<str> STRING ID
 %type<num>  asig 
-%type<l_op> expr statement statement_list print_list print_item read_list read_item
+%type<l_op> expr logic_expr statement statement_list print_list print_item read_list read_item
 
 
 /* Precedencia y asociatividad de operadores */
 //va de menos precedencia a más
+%left AND OR
+%left LT LE GT GE
+%left EQ NEQ
 %left PLUS MINUS
 %left ASTERISK SLASH
-%left UMINUS
+%right UMINUS NEGATION
+//%left UMINUS NEGATION
 
 %left NOELSE
 %left ELSE
@@ -59,7 +69,7 @@ char float_type = 2;
 %%
 program :
 ////////////
-/*vacio*/ { printf("Aplica entrada -> lambda \n");}
+/*vacio*/ { }
 | FUNC ID PARENTHI PARENTHD BRACKETI declarations statement_list BRACKETD {
 	join_list_op(list_op,$7);
 }
@@ -72,8 +82,17 @@ declarations:
 ;
 
 identifier_list: 
-asig {}
-| identifier_list COMMA asig {}
+type asig {}
+| identifier_list COMMA type asig {}
+;
+
+type:
+BOOL {
+	varType = varType * bool_type;
+}
+| INT {
+	varType = varType * int_type;
+}
 ;
 
 asig:
@@ -98,17 +117,16 @@ statement_list:
 statement :
 ID EQUAL expr SEMICOLON {
 	$$ = init_list_op();
-	Var * var = find_list_var(list_var,$1);
-	if (var == NULL)
-		printf("Error: undeclared var %s\n",$1);
-	else if (!is_mutable(var))
-		printf("Error: var %s is immutable\n",$1);
-	else 
+	if (check_var($1))
 		assign_var($1,$$,$3);
+	else
+		error = 1;
 }
 | BRACKETI statement_list BRACKETD {
 		$$ = $2;
 	}
+
+
 | IF PARENTHI expr PARENTHD statement ELSE statement {
 	$$ = $3;
 
@@ -146,8 +164,8 @@ ID EQUAL expr SEMICOLON {
 	char * dst = get_dst($3);
 	Op * jump1 = create_op(concat(concat("j_",int_to_string(++nJump)),":"),"","","");
 	Op * beqz = create_op("beqz",dst,concat("j_",int_to_string(nJump+1)),"");
+	Op * loop = create_op("b",concat("j_",int_to_string(nJump)),"","");
 	Op * jump2 = create_op(concat(concat("j_",int_to_string(++nJump)),":"),"","","");
-	Op * loop = create_op("b",concat("j_",int_to_string(nJump-1)),"","");
 
 	push_list_op($$,jump1);
 	join_list_op($$,$3);
@@ -196,7 +214,7 @@ STRING {
 	free_reg(get_n_reg(dst));
 }
 | expr {
-	nStr++;
+
 	$$ = init_list_op();
 	char * dst = get_dst($1);
 
@@ -211,6 +229,7 @@ STRING {
 	push_list_op($$,syscall);
 
 	free_reg(get_n_reg(dst));
+
 }
 ;
 
@@ -226,12 +245,7 @@ read_list : read_list COMMA read_item {
 
 read_item : ID {
 	$$ = init_list_op();
-	Var * var = find_list_var(list_var,$1);
-	if (var == NULL)
-		printf("Error: undeclared var %s\n",$1);
-	else if (!is_mutable(var))
-		printf("Error: var %s is immutable\n",$1);
-	else {
+	if (check_var($1)) {
 		Op * li = create_op("li","$v0","5","");
 		Op * syscall = create_op("syscall","","","");
 		Op * sw = create_op("sw","$v0",concat("_",$1),"");
@@ -240,22 +254,21 @@ read_item : ID {
 		push_list_op($$,syscall);
 		push_list_op($$,sw);
 	}
+	else
+		error = 1;
 }
 
 
 expr :
 expr PLUS expr {
-	$$ = init_list_op();
-	arithmetic_op("add",$$,$1,$3);
+	$$ = arithmetic_op("add",$1,$3);
 }
 | expr MINUS expr {
-	$$ = init_list_op();
-	arithmetic_op("sub",$$,$1,$3);
+	$$ = arithmetic_op("sub",$1,$3);
 }
 
 | expr ASTERISK expr {
-	$$ = init_list_op();
-	arithmetic_op("mult",$$,$1,$3);
+	$$ = arithmetic_op("mul",$1,$3);
 } 
 
 | expr SLASH expr { 
@@ -293,15 +306,57 @@ expr PLUS expr {
 }
 
 | INTEGER  {
-	$$ = init_list_op();
-	char n[11];
-	sprintf(n,"%d",$1);
-	Op * op = create_op("li",get_reg(),n,"");
-	push_list_op($$,op);
+	$$ = load_int($1);
 }
 
 | ID {
 	$$ = load_var($1);
+}
+| logic_expr {
+	$$ = $1;
+}
+
+;
+
+logic_expr:
+TRUE {
+	$$ = load_int(1);
+}
+| FALSE {
+	$$ = load_int(0);
+}
+| expr LT expr {
+	$$ = arithmetic_op("slt",$1,$3);
+}
+| expr LE expr {
+	$$ = arithmetic_op("sle",$1,$3);
+}
+| expr GT expr {
+	$$ = arithmetic_op("sgt",$1,$3);
+}
+| expr GE expr {
+	$$ = arithmetic_op("sge",$1,$3);
+}
+| expr EQ expr {
+	$$ = arithmetic_op("seq",$1,$3);
+}
+| expr NEQ expr {
+	$$ = arithmetic_op("seq",$1,$3);
+	char * dst = get_dst($$);
+	Op * op = create_op("seq",dst,dst,"0");
+	push_list_op($$,op);
+}
+| expr AND expr {
+	$$ = arithmetic_op("and",$1,$3);
+}
+| expr OR expr {
+	$$ = arithmetic_op("or",$1,$3);
+}
+| NEGATION expr {
+	$$ = $2;
+	char * dst = get_dst($2);
+	Op * op = create_op("seq",dst,dst,"0");
+	push_list_op($$,op);
 }
 ;
 
@@ -311,35 +366,55 @@ expr PLUS expr {
 ////////////////////////////////////////////////////////////
 
 void yyerror(char *msg) {
-	printf("Syntax Error : %s\n",msg);
+	fprintf(stderr,"Syntax Error : %s\n",msg);
+	error = 1;
+}
+
+List_op * load_int(int x) {
+	List_op * aux = init_list_op();
+	char n[11];
+	sprintf(n,"%d",x);
+	Op * op = create_op("li",get_reg(),n,"");
+	push_list_op(aux,op);
+	return aux;
 }
 
 void declare_var(char * name) {
-	if (find_list_var(list_var,name) != NULL)
-			printf("Error: redeclared variable %s\n", name);
+	if (find_list_var(list_var,name) != NULL) {
+			fprintf(stderr,"Error: redeclared variable %s, line %d\n", name, yylineno);
+			error = 1;
+	}
 	else 
-		push_list_var(list_var,name,int_type*varType);
+		push_list_var(list_var,name,varType);
 }
 
 
 List_op * load_var(char * name) {
 	Var * aux = find_list_var(list_var,name);
-	if (aux == NULL)
-		printf("Error: undeclared variable %s\n",name);
-	else {
-		List_op * l = init_list_op();
-
-		char * dst = get_reg();
-		Op * op = create_op("lw",dst,concat("_",name),"");
-		push_list_op(l,op);
-		return l;
+	if (aux == NULL) {
+		fprintf(stderr,"Error : undeclared variable %s, line %d\n",name,yylineno);
+		error = 1;
 	}
+	List_op * l = init_list_op();
+
+	char * dst = get_reg();
+	Op * op = create_op("lw",dst,concat("_",name),"");
+	push_list_op(l,op);
+	return l;
+	
 
 	return NULL;
 }
 
 void assign_var(char * name, List_op * l1, List_op * l2) {
 	char * dst = get_dst(l2);
+	Var * var = find_list_var(list_var,name);
+	if (abs(var->type) == bool_type) {
+		Op * op1 = create_op("seq",dst,dst,"0");
+		Op * op2 = create_op("seq",dst,dst,"0");
+		push_list_op(l2,op1);
+		push_list_op(l2,op2);
+	}
 	Op * op = create_op("sw",dst,concat("_",name),"");
 	free_reg(get_n_reg(dst));
 
@@ -347,16 +422,34 @@ void assign_var(char * name, List_op * l1, List_op * l2) {
 	join_list_op(l1,l2);
 }
 
-void arithmetic_op(char * type, List_op * join, List_op * l1, List_op * l2) {
+List_op * arithmetic_op(char * type,  List_op * l1, List_op * l2) {
+	List_op * result = init_list_op();
 	char * n1 = get_dst(l1);
 	char * n2 = get_dst(l2);
 
-	join_list_op(join,l1);
-	join_list_op(join,l2);
+	join_list_op(result,l1);
+	join_list_op(result,l2);
 	Op * op = create_op(type,n1,n1,n2);
 
-	push_list_op(join,op);
+	push_list_op(result,op);
 	free_reg(get_n_reg(n2));
+
+	return result;
+}
+
+char check_var(char * name) {
+	Var * var = find_list_var(list_var,name);
+	if (var == NULL) {
+		fprintf(stderr,"Error: undeclared var %s, line %d\n",name,yylineno);
+		error = 1;		
+		return 0;
+	}
+	else if (!is_mutable(var)){
+		fprintf(stderr,"Error: var %s is immutable, line %d\n",name,yylineno);
+		error = 1;		
+		return 0;
+	}
+	return 1;
 }
 
 char * concat(char * a, char * b) {

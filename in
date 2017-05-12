@@ -1,11 +1,16 @@
-func jamon(){
-	var a;
-	var b=3;
+func main() {
+	var int n, int z = 0;	
+	read n;
+	while (z <= n) {
+		print z,"*",n,"=",z*n;
 
-	read a;
-	if (a) {
-		print "a";
-	} else {
-		print "b";
+		if (z/2*2 == z) {
+			print ", ",z," es par\n";
+		}
+		else {
+			print ", ",z," es impar\n";
+		}
+		z = z+1;
 	}
+
 }

@@ -107,14 +107,17 @@ void push_list_str(List_str * l, char * string) {
 	}
 }
 
-//L1 and L2 not null
-void join_list_op(List_op * l1, List_op * l2) {
-	if (l1->head == NULL)
-		l1->head = l2->head;
-	else
-		l1->tail->sig = l2->head;
 
-	l1->tail = l2->tail;
+void join_list_op(List_op * l1, List_op * l2) {
+	
+	if (l1->head == NULL) {
+		l1->head = l2->head;
+		l1->tail = l2->tail;
+	}
+	else if (l2->head != NULL) {
+		l1->tail->sig = l2->head;
+		l1->tail = l2->tail;
+	}
 	
 	free(l2);
 }
@@ -136,7 +139,6 @@ void print_list_op(List_op * l) {
 			if (p->arg2[0] != '\0')
 				printf(", %s",p->arg2);
 		}
-		
 		printf("\n");
 		p = p->sig;
 	}
@@ -145,7 +147,7 @@ void print_list_op(List_op * l) {
 void print_list_var(List_var * l) {
 	Var * p = l->head;
 	while(p != NULL) {
-		printf("_%s: .word 0\n",p->elem);
+			printf("_%s: .word 0\n",p->elem);
 		p = p->sig;
 	}
 }
