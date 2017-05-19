@@ -12,6 +12,7 @@ extern List_var * list_var;
 extern List_str * list_str;
 extern List_op * list_op;
 extern char error;
+extern char flexError;
 
 int main(int argc, char **argv) {
 
@@ -36,7 +37,7 @@ int main(int argc, char **argv) {
 
 	fclose(fichero);
 
-	if (!error) {
+	if (!error && !flexError) {
  		printf(".data\n");
 		print_list_str(list_str);
 		printf("\n");

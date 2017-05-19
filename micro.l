@@ -6,7 +6,7 @@
 #include "minic.tab.h"
 
 int comienzo;
-
+char flexError = 0;
 %}
 
 L	[a-zA-Z_]
@@ -124,6 +124,7 @@ int {
 {L}({L}|{D})* {
 	if (yyleng > 16) {
 		fprintf(stderr,"ERROR [%i]: ID longer than 16 chars %s\n",yylineno,yytext);
+		flexError = 1;
 	}
 	else {
 		yylval.str=strdup(yytext);
@@ -135,7 +136,8 @@ int {
 
 {D}+ {
 	if (labs(atol(yytext)) > pow(2,31)) {
-		fprintf(stderr,"ERROR [%i]: |%s| greater than 2^31\n",yylineno,yytext);	
+		fprintf(stderr,"ERROR [%i]: |%s| greater than 2^31\n",yylineno,yytext);
+		flexError = 1;
 	}
 	else {
 		yylval.num = atoi(yytext);
@@ -152,6 +154,7 @@ int {
 
 \"[^\n"]* {
 	fprintf(stderr,"ERROR [%i]: Unclosed quotatin mark after string: %s\n",yylineno,yytext);
+	flexError = 1;
 }
 
 
@@ -166,6 +169,7 @@ int {
 
 [^\n\r\t&|!<> *a-zA-Z0-9_/(),;{}+"=\\-]+ {
 	fprintf(stderr,"Unknow token [%d]: %s\n",yylineno,yytext); 
+	flexError = 1;
 }
 
 

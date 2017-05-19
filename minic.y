@@ -11,13 +11,16 @@ extern int yylineno;
 
 void yyerror(char *msg);
 void declare_var(char * name);
+char check_var(char * name);
+void assign_var(char * name, List_op * l1, List_op * l2);
+
 List_op * load_var(char * name);
 List_op * load_int(int x);
-void assign_var(char * name, List_op * l1, List_op * l2);
 List_op * arithmetic_op(char * type, List_op * l1, List_op * l2);
+
 char * concat(char * a, char * b);
 int is_mutable(Var * var);
-char check_var(char * name);
+
 char * int_to_string(int n);
 
 List_var * list_var;
@@ -58,7 +61,6 @@ char error = 0;
 %left PLUS MINUS
 %left ASTERISK SLASH
 %right UMINUS NEGATION
-//%left UMINUS NEGATION
 
 %left NOELSE
 %left ELSE
