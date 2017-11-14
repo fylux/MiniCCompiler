@@ -23,7 +23,7 @@ You can run the MIPS code with an emulator like Spim:
 `spim -file asmFile.s`
 
 ## Example
-The following code example is provided inside the file [in](LICENSE).
+The following code example is provided inside the file [in](in).
 ```
 func main() {
 	var int n, int z = 0;	
