@@ -22,5 +22,25 @@ You can run the MIPS code with an emulator like Spim:
 
 `spim -file asmFile.s`
 
+## Example
+The following code example is provided inside the file [in](LICENSE).
+```
+func main() {
+ var int n, int z = 0;	
+	read n;
+	while (z <= n) {
+		print z,"*",n,"=",z*n;
+
+		if (z/2*2 == z) {
+			print ", ",z," es par\n";
+		}
+		else {
+			print ", ",z," es impar\n";
+		}
+		z = z+1;
+	}
+}
+```
+
 # License
 MiniCCompiler is provided under MIT License. See [LICENSE](LICENSE).
