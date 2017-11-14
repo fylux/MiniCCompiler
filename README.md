@@ -26,16 +26,16 @@ You can run the MIPS code with an emulator like Spim:
 The following code example is provided inside the file [in](LICENSE).
 ```
 func main() {
- var int n, int z = 0;	
+	var int n, int z = 0;	
 	read n;
 	while (z <= n) {
 		print z,"*",n,"=",z*n;
 
 		if (z/2*2 == z) {
-			print ", ",z," es par\n";
+			print ", ",z," is even\n";
 		}
 		else {
-			print ", ",z," es impar\n";
+			print ", ",z," is odd\n";
 		}
 		z = z+1;
 	}
