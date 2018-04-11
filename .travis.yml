@@ -1,5 +1,9 @@
 language: c
 compiler: gcc
 
+before_install:
+  - sudo apt-get install bison
+  - sudo apt-get install flex
+
 script:
   - make run
