@@ -1,4 +1,6 @@
 # MiniCCompiler
+[![Build status](https://travis-ci.org/fylux/MiniCCompiler.svg?branch=master)](https://travis-ci.org/fylux/MiniCCompiler)
+
 Simplified version of C language to MIPS Compiler
  
 ## Getting Started
